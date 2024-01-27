@@ -6,7 +6,7 @@
 #include <errno.h>
 
 #define MAX_LINE_LENGTH 1024
-#define MAX_PARAMS 64   // TODO: delete max params and edit code accordingly
+#define MAX_PARAMS 64
 #define MAX_BG_PROCESSES 4
 
 typedef struct {
@@ -21,6 +21,11 @@ void print_prompt() {
     printf("hw1shell$ ");
 }
 
+void errors_handler(const char* syscall_name) {
+    printf("hw1shell: %s failed, errno is %d\n", syscall_name, errno);
+    // TODO call this function where needed
+}
+
 void exit_handler() {
     // Iterate on the current processes,
     // wait for them to die and exit
@@ -33,7 +38,7 @@ void exit_handler() {
 void cd_handler(char *dir) {
     if (chdir(dir) != 0) {
         printf("hw1shell: invalid command\n");
-        errors_handler();   // TODO: Complete error handling
+        errors_handler("chdir");
     }
 }
 
@@ -46,6 +51,11 @@ void jobs_handler() {
 
 void command_handler(char **params, int background) {
     // TODO: Test fucntion
+    if (params[0] == NULL) {
+        printf("hw1shell: invalid command\n");
+        return;
+    }
+
     if (background && bg_process_count == MAX_BG_PROCESSES) {
         printf("hw1shell: too many background commands running\n");
         return;
@@ -55,7 +65,8 @@ void command_handler(char **params, int background) {
     if (pid == 0) {
         // child process
         execlp(params[0], *params, NULL);
-        printf("hw1shell: %s failed, errno is %d\n", *params, errno);
+        //errors_handler("child");
+        //printf("hw1shell: %s failed, errno is %d\n", *params, errno);
         exit(0);
     } else if (pid > 0) {
         // father process
@@ -88,6 +99,11 @@ void reap_zombies() {
 
 char* get_command(char* line, char** params, int* param_count) {
     // Get a str from the user and return it splited to arguments
+    if (*param_count > MAX_PARAMS) {
+        printf("hw1shell: too many parameters\n");
+        // Add any additional handling or return an error code if needed
+        errors_handler("get_command");
+    }
     
     fgets(line, MAX_LINE_LENGTH, stdin);
     line[strcspn(line, "\n")] = '\0'; // replace last chr \n with \0
@@ -100,12 +116,6 @@ char* get_command(char* line, char** params, int* param_count) {
     }
     params[*param_count] = NULL;
 
-}
-
-void errors_handler() {
-//     TODO: If any system call fails with an error, we display a message ‘‘hw1shell: %s failed,
-//  errno is %d’’ and continue, where %s is replaced with the system call name, and %d is
-//  replaced with the contents of the global variable errno.  
 }
 
 int main() {
