@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <fcntl.h>  // Add this line for O_RDONLY
+#include <unistd.h> // Add this line for open
+
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_PARAMS 64
@@ -38,7 +41,7 @@ void exit_handler() {
 void cd_handler(char *dir) {
     if (chdir(dir) != 0) {
         printf("hw1shell: invalid command\n");
-        errors_handler("chdir");
+        //errors_handler("chdir");
     }
 }
 
@@ -55,18 +58,31 @@ void command_handler(char **params, int background) {
         printf("hw1shell: invalid command\n");
         return;
     }
+    //TODO print invalid command for jibrish
 
     if (background && bg_process_count == MAX_BG_PROCESSES) {
         printf("hw1shell: too many background commands running\n");
         return;
     }
+// Debug print to check contents of params
+ //   printf("Debug: params array:\n");
+// for (int i = 0; i<=4 ;i++){ //params[i] != NULL; i++) {
+//        printf(" %d %s\n", i, params[i]);
+//  }
+//end debug
 
     pid_t pid = fork();
+
     if (pid == 0) {
         // child process
+       // execl("/bin/cat", "cat", "file.txt", NULL);
+        close(0);  // close stdin
+        open("/dev/null", O_RDONLY);  // open /dev/null as stdin
         execlp(params[0], *params, NULL);
-        //errors_handler("child");
-        //printf("hw1shell: %s failed, errno is %d\n", *params, errno);
+        
+//TODO bug is above here printf("im here 1\n");
+        printf("im here 1\n");
+        errors_handler("child");
         exit(0);
     } else if (pid > 0) {
         // father process
@@ -87,6 +103,7 @@ void reap_zombies() {
     for (int i = 0; i < bg_process_count; i++) {
         if (waitpid(bg_processes[i].pid, NULL, WNOHANG) > 0) {
             printf("hw1shell: pid %d finished\n", bg_processes[i].pid);
+            // Remove the finished background process from array
             for (int j = i; j < bg_process_count - 1; j++) {
                 // move bg processes to the left
                 // in the bg processes array
@@ -97,8 +114,9 @@ void reap_zombies() {
     }
 }
 
-char* get_command(char* line, char** params, int* param_count) {
-    // Get a str from the user and return it splited to arguments
+void get_command(char* line, char** params, int* param_count) {
+    // Get a str from the user and return it splited to arguments in params[]
+    
     if (*param_count > MAX_PARAMS) {
         printf("hw1shell: too many parameters\n");
         // Add any additional handling or return an error code if needed
@@ -132,7 +150,7 @@ int main() {
         if (param_count == 0) { // No command from the user
             continue;
         }
-
+        // Check if command is background
         int background;
         background = strcmp(params[param_count - 1], "&") ? 0 : 1;
         if (background) {
