@@ -26,7 +26,6 @@ void print_prompt() {
 
 void errors_handler(const char* syscall_name) {
     printf("hw1shell: %s failed, errno is %d\n", syscall_name, errno);
-    // TODO call this function where needed
 }
 
 void exit_handler() {
@@ -41,47 +40,37 @@ void exit_handler() {
 void cd_handler(char *dir) {
     if (chdir(dir) != 0) {
         printf("hw1shell: invalid command\n");
-        //errors_handler("chdir");
+        errors_handler("chdir");
     }
 }
 
 void jobs_handler() {
     // TODO: Test function
+    // Printing background processes
     for (int i = 0; i < bg_process_count; i++) {
         printf("%d\t%s\n", bg_processes[i].pid, bg_processes[i].command);
     }
 }
 
 void command_handler(char **params, int background) {
-    // TODO: Test fucntion
+    // TODO: Test fucntion for end cases
     if (params[0] == NULL) {
         printf("hw1shell: invalid command\n");
         return;
     }
-    //TODO print invalid command for jibrish
 
     if (background && bg_process_count == MAX_BG_PROCESSES) {
         printf("hw1shell: too many background commands running\n");
         return;
     }
-// Debug print to check contents of params
- //   printf("Debug: params array:\n");
-// for (int i = 0; i<=4 ;i++){ //params[i] != NULL; i++) {
-//        printf(" %d %s\n", i, params[i]);
-//  }
-//end debug
 
     pid_t pid = fork();
 
     if (pid == 0) {
-        // child process
-       // execl("/bin/cat", "cat", "file.txt", NULL);
-        close(0);  // close stdin
-        open("/dev/null", O_RDONLY);  // open /dev/null as stdin
-        execlp(params[0], *params, NULL);
-        
-//TODO bug is above here printf("im here 1\n");
-        printf("im here 1\n");
+        // Child process
+        // Execute command with parameters
+        execvp(params[0], params);
+        printf("hw1shell:   invalid command\n");
         errors_handler("child");
         exit(0);
     } else if (pid > 0) {
@@ -98,10 +87,11 @@ void command_handler(char **params, int background) {
 }
 
 void reap_zombies() {
-    // TODO: Add documentation
     // TODO: Test function
     for (int i = 0; i < bg_process_count; i++) {
+        // Wait for a child matching PID to die
         if (waitpid(bg_processes[i].pid, NULL, WNOHANG) > 0) {
+            // Declare finished process
             printf("hw1shell: pid %d finished\n", bg_processes[i].pid);
             // Remove the finished background process from array
             for (int j = i; j < bg_process_count - 1; j++) {
