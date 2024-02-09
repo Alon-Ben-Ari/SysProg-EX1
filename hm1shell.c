@@ -70,7 +70,7 @@ void command_handler(char **params, int background) {
         // Execute command with parameters
         execvp(params[0], params);
         printf("hw1shell:   invalid command\n");
-        errors_handler("child");
+        errors_handler(params[0]);
         exit(0);
     } else if (pid > 0) {
         // father process
@@ -86,7 +86,9 @@ void command_handler(char **params, int background) {
 }
 
 void reap_zombies() {
-    // TODO: Test function
+    // Wait for processes to finish,
+    // print the customed message and 
+    // remove them from the array
     for (int i = 0; i < bg_process_count; i++) {
         // Wait for a child matching PID to die
         if (waitpid(bg_processes[i].pid, NULL, WNOHANG) > 0) {
@@ -109,7 +111,7 @@ void get_command(char* line, char** params, int* param_count) {
     if (*param_count > MAX_PARAMS) {
         printf("hw1shell: too many parameters\n");
         // Add any additional handling or return an error code if needed
-        errors_handler("get_command");
+        errors_handler("get_command"); // TODO: Why calling error_handler?
     }
     
     fgets(line, MAX_LINE_LENGTH, stdin);
