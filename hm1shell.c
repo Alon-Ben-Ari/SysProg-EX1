@@ -45,7 +45,6 @@ void cd_handler(char *dir) {
 }
 
 void jobs_handler() {
-    // TODO: Test function
     // Printing background processes
     for (int i = 0; i < bg_process_count; i++) {
         printf("%d\t%s\n", bg_processes[i].pid, bg_processes[i].command);
