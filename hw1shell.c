@@ -52,7 +52,7 @@ void jobs_handler() {
 }
 
 void command_handler(char **params, int background) {
-    // TODO: Test fucntion for end cases
+
     if (params[0] == NULL) {
         printf("hw1shell: invalid command\n");
         return;
@@ -64,6 +64,9 @@ void command_handler(char **params, int background) {
     }
 
     pid_t pid = fork();
+    if (pid == -1) {
+        errors_handler("fork");
+    }
 
     if (pid == 0) {
         // Child process
@@ -111,7 +114,6 @@ void get_command(char* line, char** params, int* param_count) {
     if (*param_count > MAX_PARAMS) {
         printf("hw1shell: too many parameters\n");
         // Add any additional handling or return an error code if needed
-        errors_handler("get_command"); // TODO: Why calling error_handler?
     }
     
     fgets(line, MAX_LINE_LENGTH, stdin);
